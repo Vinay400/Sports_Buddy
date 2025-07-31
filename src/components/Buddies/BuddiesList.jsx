@@ -57,156 +57,28 @@ const BuddiesList = () => {
     try {
       setLoading(true);
       
-      // Try to fetch from Firebase first
-      try {
-        const usersQuery = query(
-          collection(db, 'users'),
-          orderBy('createdAt', 'desc')
-        );
-        const snapshot = await getDocs(usersQuery);
-        const usersData = snapshot.docs
-          .map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }))
-          .filter(user => user.id !== currentUser.uid);
-        
-        if (usersData.length > 0) {
-          setBuddies(usersData);
-        } else {
-          // If no users in Firebase, use sample data
-          setBuddies(getSampleBuddies());
-        }
-      } catch (firebaseError) {
-        // Firebase not configured, using sample data
-        setBuddies(getSampleBuddies());
-      }
+      const usersQuery = query(
+        collection(db, 'users'),
+        orderBy('createdAt', 'desc')
+      );
+      const snapshot = await getDocs(usersQuery);
+      const usersData = snapshot.docs
+        .map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }))
+        .filter(user => user.id !== currentUser.uid);
+      
+      setBuddies(usersData);
     } catch (error) {
       console.error('Error fetching buddies:', error);
-      setBuddies(getSampleBuddies());
+      setBuddies([]); // Show empty state instead of sample data
     } finally {
       setLoading(false);
     }
   };
 
-  const getSampleBuddies = () => {
-    return [
-      {
-        id: 'buddy1',
-        firstName: 'Alex',
-        lastName: 'Johnson',
-        email: 'alex@example.com',
-        bio: 'Passionate about tennis and running. Looking for workout partners!',
-        location: 'New York, NY',
-        rating: 4.8,
-        activitiesJoined: 15,
-        activitiesCreated: 3,
-        favoriteSports: ['Tennis', 'Running', 'Basketball'],
-        skillLevels: {
-          'Tennis': 'Advanced',
-          'Running': 'Intermediate',
-          'Basketball': 'Beginner'
-        },
-        profileImage: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150',
-        createdAt: new Date('2024-01-15')
-      },
-      {
-        id: 'buddy2',
-        firstName: 'Sarah',
-        lastName: 'Williams',
-        email: 'sarah@example.com',
-        bio: 'Yoga instructor and cycling enthusiast. Love outdoor activities!',
-        location: 'Los Angeles, CA',
-        rating: 4.9,
-        activitiesJoined: 22,
-        activitiesCreated: 8,
-        favoriteSports: ['Cycling', 'Swimming', 'Volleyball'],
-        skillLevels: {
-          'Cycling': 'Professional',
-          'Swimming': 'Advanced',
-          'Volleyball': 'Intermediate'
-        },
-        profileImage: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=150',
-        createdAt: new Date('2024-01-10')
-      },
-      {
-        id: 'buddy3',
-        firstName: 'Mike',
-        lastName: 'Chen',
-        email: 'mike@example.com',
-        bio: 'Football coach and fitness trainer. Always up for a challenge!',
-        location: 'Chicago, IL',
-        rating: 4.7,
-        activitiesJoined: 18,
-        activitiesCreated: 12,
-        favoriteSports: ['Football', 'Golf', 'Running'],
-        skillLevels: {
-          'Football': 'Professional',
-          'Golf': 'Advanced',
-          'Running': 'Advanced'
-        },
-        profileImage: 'https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=150',
-        createdAt: new Date('2024-01-08')
-      },
-      {
-        id: 'buddy4',
-        firstName: 'Emma',
-        lastName: 'Davis',
-        email: 'emma@example.com',
-        bio: 'Badminton player and swimming coach. Love competitive sports!',
-        location: 'Miami, FL',
-        rating: 4.6,
-        activitiesJoined: 12,
-        activitiesCreated: 5,
-        favoriteSports: ['Badminton', 'Swimming', 'Tennis'],
-        skillLevels: {
-          'Badminton': 'Professional',
-          'Swimming': 'Advanced',
-          'Tennis': 'Intermediate'
-        },
-        profileImage: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=150',
-        createdAt: new Date('2024-01-05')
-      },
-      {
-        id: 'buddy5',
-        firstName: 'David',
-        lastName: 'Rodriguez',
-        email: 'david@example.com',
-        bio: 'Basketball enthusiast and cricket player. Team sports are my passion!',
-        location: 'Houston, TX',
-        rating: 4.5,
-        activitiesJoined: 20,
-        activitiesCreated: 7,
-        favoriteSports: ['Basketball', 'Cricket', 'Volleyball'],
-        skillLevels: {
-          'Basketball': 'Advanced',
-          'Cricket': 'Intermediate',
-          'Volleyball': 'Intermediate'
-        },
-        profileImage: 'https://images.pexels.com/photos/1681010/pexels-photo-1681010.jpeg?auto=compress&cs=tinysrgb&w=150',
-        createdAt: new Date('2024-01-03')
-      },
-      {
-        id: 'buddy6',
-        firstName: 'Lisa',
-        lastName: 'Thompson',
-        email: 'lisa@example.com',
-        bio: 'Marathon runner and gym enthusiast. Fitness is my lifestyle!',
-        location: 'Seattle, WA',
-        rating: 4.8,
-        activitiesJoined: 25,
-        activitiesCreated: 4,
-        favoriteSports: ['Running', 'Cycling', 'Swimming'],
-        skillLevels: {
-          'Running': 'Professional',
-          'Cycling': 'Advanced',
-          'Swimming': 'Intermediate'
-        },
-        profileImage: 'https://images.pexels.com/photos/1130626/pexels-photo-1130626.jpeg?auto=compress&cs=tinysrgb&w=150',
-        createdAt: new Date('2024-01-01')
-      }
-    ];
-  };
+
   const filterBuddies = () => {
     let filtered = buddies;
 
