@@ -78,7 +78,7 @@ const BuddiesList = () => {
           setBuddies(getSampleBuddies());
         }
       } catch (firebaseError) {
-        console.log('Firebase not configured, using sample data');
+        // Firebase not configured, using sample data
         setBuddies(getSampleBuddies());
       }
     } catch (error) {
@@ -256,7 +256,7 @@ const BuddiesList = () => {
           createdAt: new Date()
         });
       } catch (firebaseError) {
-        console.log('Firebase not configured, updating local state only');
+        // Firebase not configured, updating local state only
       }
 
       // Update local state to show request sent

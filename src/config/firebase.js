@@ -5,13 +5,13 @@ import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAUn9v5Fv_FGqXcjJ2KhKyH4hKdcc1lI00",
-  authDomain: "sportsbuddy-9597e.firebaseapp.com",
-  projectId: "sportsbuddy-9597e",
-  storageBucket: "sportsbuddy-9597e.firebasestorage.app",
-  messagingSenderId: "1077695106076",
-  appId: "1:1077695106076:web:a328ea18b2257f9af7a3d9",
-  measurementId: "G-PNSLTE3274"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 // Initialize Firebase

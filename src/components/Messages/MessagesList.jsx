@@ -85,7 +85,7 @@ const MessagesList = () => {
           setConversations(getSampleConversations());
         }
       } catch (firebaseError) {
-        console.log('Firebase not configured, using sample data');
+        // Firebase not configured, using sample data
         setConversations(getSampleConversations());
       }
     } catch (error) {
@@ -210,11 +210,11 @@ const MessagesList = () => {
         }));
         setMessages(messagesData);
       }, (error) => {
-        console.log('Firebase not configured, using sample messages');
+        // Firebase not configured, using sample messages
         setMessages(getSampleMessages(conversationId));
       });
     } catch (error) {
-      console.log('Using sample messages');
+              // Using sample messages
       setMessages(getSampleMessages(conversationId));
     }
   };
@@ -249,7 +249,7 @@ const MessagesList = () => {
           lastMessageBy: currentUser.uid
         });
       } catch (firebaseError) {
-        console.log('Firebase not configured, updating local state');
+        // Firebase not configured, updating local state
         
         // Update local messages
         const newMsg = {
@@ -304,7 +304,7 @@ const MessagesList = () => {
         await addDoc(collection(db, 'conversations'), newConversation);
         fetchConversations();
       } catch (firebaseError) {
-        console.log('Firebase not configured, creating local conversation');
+        // Firebase not configured, creating local conversation
         // Create a sample conversation locally
         const newConv = {
           id: conversationId,
