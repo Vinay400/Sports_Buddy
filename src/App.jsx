@@ -9,6 +9,7 @@ import SportsAuth from './components/Auth/SportsAuth';
 import './App.css';
 import BuddiesList from './components/Buddies/BuddiesList';
 import MessagesList from './components/Messages/MessagesList';
+import BuddyRequests from './components/Buddies/BuddyRequests';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -56,6 +57,13 @@ const AppContent = () => {
               <BuddiesList />
             </ProtectedRoute>
           } />
+
+          <Route path="/requests" element={
+            <ProtectedRoute>
+              <BuddyRequests />
+            </ProtectedRoute>
+          } />
+
              <Route path="/messages" element={
             <ProtectedRoute>
               <MessagesList />

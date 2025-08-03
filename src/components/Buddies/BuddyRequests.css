@@ -1,0 +1,299 @@
+/* BuddyRequests.css */
+
+.requests-page {
+  display: flex;
+  justify-content: center;
+  background: #f0f4f8;
+  min-height: 100vh;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  padding: 20px;
+}
+
+.requests-container {
+  width: 100%;
+  max-width: 800px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.requests-header h1 {
+  margin: 0;
+  font-size: 2rem;
+  color: #2a69ff;
+}
+
+.requests-header p {
+  color: #4a5568;
+  margin-top: 4px;
+  font-size: 1rem;
+}
+
+.demo-notice {
+  background: #fed7d7;
+  border: 1px solid #f56565;
+  color: #c53030;
+  padding: 10px 14px;
+  margin: 16px 0;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.setup-link {
+  display: inline-block;
+  margin-top: 8px;
+  color: #2a69ff;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.error-state,
+.loading-state,
+.empty-state {
+  margin-top: 30px;
+  text-align: center;
+  color: #718096;
+}
+
+.retry-btn {
+  margin-top: 12px;
+  background: #2a69ff;
+  border: none;
+  color: white;
+  padding: 10px 20px;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.retry-btn:hover {
+  background: #1a4fcc;
+}
+
+.loading-spinner {
+  margin: 0 auto 8px auto;
+  border: 4px solid #e2e8f0;
+  border-top: 4px solid #2a69ff;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.requests-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.request-card {
+  background: #f7fafc;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  border: 1px solid #e2e8f0;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.request-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+.request-avatar img {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.avatar-placeholder {
+  width: 60px;
+  height: 60px;
+  background: #718096;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 24px;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.request-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.request-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.request-name {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.request-time {
+  font-size: 0.8rem;
+  color: #718096;
+  white-space: nowrap;
+  margin-left: 12px;
+}
+
+.request-location {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #4a5568;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.request-sports {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.sports-label {
+  font-size: 0.85rem;
+  color: #4a5568;
+  font-weight: 600;
+}
+
+.sports-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.sport-tag {
+  background: #bee3f8;
+  color: #2b6cb0;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+}
+
+.more-sports {
+  color: #2b6cb0;
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+.request-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.request-btn {
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+
+.accept-btn {
+  background: #48bb78;
+  color: white;
+}
+
+.accept-btn:hover {
+  background: #319955;
+  transform: translateY(-1px);
+}
+
+.reject-btn {
+  background: #f56565;
+  color: white;
+}
+
+.reject-btn:hover {
+  background: #e53e3e;
+  transform: translateY(-1px);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #a0aec0;
+}
+
+.empty-state svg {
+  margin-bottom: 16px;
+  opacity: 0.6;
+}
+
+.empty-state h3 {
+  margin: 0 0 8px 0;
+  font-size: 1.3rem;
+  color: #4a5568;
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 1rem;
+  color: #718096;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .requests-container {
+    padding: 16px;
+    margin: 10px;
+  }
+
+  .request-card {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 12px;
+  }
+
+  .request-header {
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .request-time {
+    margin-left: 0;
+  }
+
+  .request-actions {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .request-btn {
+    flex: 1;
+    justify-content: center;
+  }
+} 

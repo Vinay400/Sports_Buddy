@@ -1,97 +1,124 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { 
-  Activity, 
-  Users, 
-  Calendar, 
-  MapPin, 
-  Clock, 
-  Star,
-  Plus,
-  TrendingUp
+import {
+  Calendar,
+  Users,
+  MessageCircle,
+  Trophy,
+  MapPin,
+  Clock,
+  Plus
 } from 'lucide-react';
-import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
-import { db } from '../../config/firebase';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { db, isFirebaseConfigured } from '../../config/firebase';
+import ParticipantsModal from '../Participants/ParticipantsModal';
 import './Dashboard.css';
 
 const Dashboard = () => {
   const { currentUser, userProfile } = useAuth();
+
   const [stats, setStats] = useState({
-    activitiesJoined: 0,
-    buddiesFound: 0,
-    hoursActive: 0,
-    activitiesCreated: 0
+    activities: 0,
+    buddies: 0,
+    messages: 0,
+    achievements: 0
   });
   const [recentActivities, setRecentActivities] = useState([]);
-  const [upcomingEvents, setUpcomingEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [firebaseStatus, setFirebaseStatus] = useState('checking');
+  const [selectedParticipants, setSelectedParticipants] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    if (currentUser) {
-      fetchDashboardData();
-    }
+    fetchDashboardData();
+    testFirebaseConnection();
   }, [currentUser]);
 
-  const fetchDashboardData = async () => {
+  const testFirebaseConnection = async () => {
     try {
-      setLoading(true);
-      
-      // Fetch user's activities
-      const activitiesQuery = query(
-        collection(db, 'activities'),
-        where('participants', 'array-contains', currentUser.uid),
-        orderBy('createdAt', 'desc'),
-        limit(5)
-      );
-      const activitiesSnapshot = await getDocs(activitiesQuery);
-      setRecentActivities(activitiesSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })));
+      if (!isFirebaseConfigured) {
+        setFirebaseStatus('not-configured');
+        return;
+      }
 
-      // Fetch upcoming events
-      const eventsQuery = query(
-        collection(db, 'activities'),
-        where('participants', 'array-contains', currentUser.uid),
-        where('date', '>=', new Date()),
-        orderBy('date', 'asc'),
-        limit(3)
-      );
-      const eventsSnapshot = await getDocs(eventsQuery);
-      setUpcomingEvents(eventsSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })));
-
-      // Update stats (mock data for now)
-      setStats({
-        activitiesJoined: activitiesSnapshot.docs.length,
-        buddiesFound: 12,
-        hoursActive: 45,
-        activitiesCreated: 3
-      });
-
+      const testQuery = collection(db, 'users');
+      const snapshot = await getDocs(testQuery);
+      setFirebaseStatus('connected');
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-    } finally {
-      setLoading(false);
+      console.error('Firebase connection failed:', error);
+      setFirebaseStatus('failed');
     }
   };
 
-  const StatCard = ({ icon, title, value, color, trend }) => (
+  const fetchDashboardData = async () => {
+    try {
+      if (!currentUser) return;
+      const uid = currentUser.uid;
+
+      const activitiesSnapshot = await getDocs(collection(db, 'activities'));
+      const usersSnapshot = await getDocs(collection(db, 'users'));
+
+      const conversationsQuery = query(
+        collection(db, 'conversations'),
+        where('participants', 'array-contains', uid)
+      );
+      const conversationsSnapshot = await getDocs(conversationsQuery);
+
+      setStats({
+        activities: activitiesSnapshot.size,
+        buddies: usersSnapshot.docs.filter(doc => doc.id !== uid).length,
+        messages: conversationsSnapshot.size,
+        achievements: userProfile?.achievements?.length || 0
+      });
+
+      const recentActivitiesData = activitiesSnapshot.docs
+        .slice(0, 3)
+        .map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+
+      setRecentActivities(recentActivitiesData);
+    } catch (error) {
+      console.error('🔥 Unexpected error:', error);
+    }
+  };
+
+  // Fetch full user details for participant IDs
+  const fetchParticipantsData = async (participantIds) => {
+    if (!participantIds || participantIds.length === 0) {
+      setSelectedParticipants([]);
+      return;
+    }
+    try {
+      // Firestore allows max 10 for 'in' queries, split if needed
+      // but here assuming small arrays for simplicity
+      const usersRef = collection(db, 'users');
+      const q = query(usersRef, where('__name__', 'in', participantIds));
+      const querySnapshot = await getDocs(q);
+      const participants = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setSelectedParticipants(participants);
+    } catch (error) {
+      console.error('Error fetching participants data:', error);
+      setSelectedParticipants([]);
+    }
+  };
+
+  const handleParticipantsClick = (participantIds) => {
+    fetchParticipantsData(participantIds);
+    setIsModalOpen(true);
+  };
+
+  const StatCard = ({ icon: Icon, title, value, color }) => (
     <div className="stat-card">
-      <div className="stat-icon" style={{ backgroundColor: `${color}20`, color }}>
-        {icon}
+      <div className="stat-icon" style={{ backgroundColor: color }}>
+        <Icon size={24} />
       </div>
       <div className="stat-content">
-        <h4 className="stat-title">{title}</h4>
-        <p className="stat-value">{value}</p>
-        {trend && (
-          <div className="stat-trend">
-            <TrendingUp size={14} />
-            <span>+{trend}% this week</span>
-          </div>
-        )}
+        <h3>{value}</h3>
+        <p>{title}</p>
       </div>
     </div>
   );
@@ -99,180 +126,136 @@ const Dashboard = () => {
   const ActivityCard = ({ activity }) => (
     <div className="activity-card">
       <div className="activity-header">
-        <div className="activity-sport">{activity.sport}</div>
-        <div className="activity-date">
-          {new Date(activity.date?.toDate()).toLocaleDateString()}
-        </div>
+        <h4>{activity.title}</h4>
+        <span className="activity-sport">{activity.sport}</span>
       </div>
-      <h4 className="activity-title">{activity.title}</h4>
       <div className="activity-details">
-        <div className="activity-location">
-          <MapPin size={14} />
+        <div className="activity-info">
+          <MapPin size={16} />
           <span>{activity.location}</span>
         </div>
-        <div className="activity-participants">
-          <Users size={14} />
-          <span>{activity.participants?.length || 0} / {activity.maxParticipants}</span>
+        <div className="activity-info">
+          <Clock size={16} />
+          <span>
+            {activity.date
+              ? new Date(activity.date).toLocaleDateString()
+              : 'Invalid Date'}
+          </span>
         </div>
       </div>
-      <div className="activity-tags">
-        <span className="activity-tag">{activity.skillLevel}</span>
-        <span className="activity-tag">{activity.type}</span>
+      <div className="activity-participants">
+        <Users size={16} />
+        <span
+          style={{ color: '#667eea', cursor: 'pointer' }}
+          onClick={() => handleParticipantsClick(activity.participants || [])}
+        >
+          {activity.participants?.length || 0} participants
+        </span>
       </div>
     </div>
   );
 
-  if (loading) {
-    return (
-      <div className="dashboard-loading">
-        <div className="loading-spinner"></div>
-        <p>Loading your dashboard...</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="dashboard">
+    <div className="dashboard-page">
       <div className="dashboard-container">
-        {/* Welcome Section */}
-        <div className="welcome-section">
-          <div className="welcome-content">
-            <h1 className="welcome-title">
-              Welcome back, {userProfile?.firstName || currentUser?.displayName || 'Athlete'}! 🏃‍♂️
-            </h1>
-            <p className="welcome-subtitle">
-              Ready to find your next sports buddy and stay active?
+        {/* Header */}
+        <div className="dashboard-header">
+          <div className="header-content">
+            <h1>Welcome back, {userProfile?.firstName || 'Sports Buddy'}!</h1>
+            <p>Ready for your next sports adventure?</p>
+          </div>
+        </div>
+
+        {/* Firebase Status */}
+        {firebaseStatus === 'checking' && (
+          <div className="status-card checking">
+            <p>Checking Firebase connection...</p>
+          </div>
+        )}
+        {firebaseStatus === 'connected' && (
+          <div className="status-card connected">
+            <p>✅ Firebase connected successfully!</p>
+          </div>
+        )}
+        {firebaseStatus === 'not-configured' && (
+          <div className="status-card not-configured">
+            <p>⚠️ Firebase not configured - Running in demo mode</p>
+            <p style={{ fontSize: '0.9rem', marginTop: '0.5rem', color: '#666' }}>
+              To enable full functionality, please set up your Firebase project and environment variables.
             </p>
           </div>
-          <button className="create-activity-btn">
-            <Plus size={20} />
-            Create Activity
-          </button>
-        </div>
+        )}
+        {firebaseStatus === 'failed' && (
+          <div className="status-card failed">
+            <p>❌ Firebase connection failed</p>
+            <p style={{ fontSize: '0.9rem', marginTop: '0.5rem', color: '#666' }}>
+              Please check your environment variables and Firebase project configuration.
+            </p>
+          </div>
+        )}
 
         {/* Stats Grid */}
         <div className="stats-grid">
-          <StatCard
-            icon={<Activity size={24} />}
-            title="Activities Joined"
-            value={stats.activitiesJoined}
-            color="#667eea"
-            trend={12}
-          />
-          <StatCard
-            icon={<Users size={24} />}
-            title="Buddies Found"
-            value={stats.buddiesFound}
-            color="#764ba2"
-            trend={8}
-          />
-          <StatCard
-            icon={<Clock size={24} />}
-            title="Hours Active"
-            value={`${stats.hoursActive}h`}
-            color="#f093fb"
-            trend={15}
-          />
-          <StatCard
-            icon={<Star size={24} />}
-            title="Activities Created"
-            value={stats.activitiesCreated}
-            color="#4facfe"
-            trend={5}
-          />
+          <StatCard icon={Calendar} title="Activities" value={stats.activities} color="#667eea" />
+          <StatCard icon={Users} title="Buddies" value={stats.buddies} color="#764ba2" />
+          <StatCard icon={MessageCircle} title="Messages" value={stats.messages} color="#f093fb" />
+          <StatCard icon={Trophy} title="Achievements" value={stats.achievements} color="#f5576c" />
         </div>
 
-        {/* Main Content */}
-        <div className="dashboard-main">
-          {/* Recent Activities */}
-          <div className="dashboard-section">
-            <div className="section-header">
-              <h2 className="section-title">Recent Activities</h2>
-              <a href="/activities" className="section-link">View All</a>
-            </div>
-            <div className="activities-grid">
-              {recentActivities.map(activity => (
-                <ActivityCard key={activity.id} activity={activity} />
-              ))}
-              {recentActivities.length === 0 && (
-                <div className="empty-state">
-                  <Activity size={48} />
-                  <h3>No activities yet</h3>
-                  <p>Start by joining or creating your first activity!</p>
-                  <button className="cta-btn">Find Activities</button>
-                </div>
-              )}
-            </div>
+        {/* Recent Activities */}
+        <div className="recent-activities">
+          <div className="section-header">
+            <h2>Recent Activities</h2>
+            <button className="view-all-btn">View All</button>
           </div>
-
-          {/* Upcoming Events */}
-          <div className="dashboard-section">
-            <div className="section-header">
-              <h2 className="section-title">Upcoming Events</h2>
-              <a href="/calendar" className="section-link">View Calendar</a>
-            </div>
-            <div className="events-list">
-              {upcomingEvents.map(event => (
-                <div key={event.id} className="event-item">
-                  <div className="event-date">
-                    <div className="event-day">
-                      {new Date(event.date?.toDate()).getDate()}
-                    </div>
-                    <div className="event-month">
-                      {new Date(event.date?.toDate()).toLocaleDateString('en', { month: 'short' })}
-                    </div>
-                  </div>
-                  <div className="event-details">
-                    <h4 className="event-title">{event.title}</h4>
-                    <div className="event-info">
-                      <span className="event-time">
-                        <Clock size={14} />
-                        {new Date(event.date?.toDate()).toLocaleTimeString('en', { 
-                          hour: '2-digit', 
-                          minute: '2-digit' 
-                        })}
-                      </span>
-                      <span className="event-location">
-                        <MapPin size={14} />
-                        {event.location}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="event-sport">{event.sport}</div>
-                </div>
-              ))}
-              {upcomingEvents.length === 0 && (
-                <div className="empty-state-small">
-                  <Calendar size={32} />
-                  <p>No upcoming events</p>
-                </div>
-              )}
-            </div>
+          <div className="activities-grid">
+            {recentActivities.length > 0 ? (
+              recentActivities.map(activity => (
+                <ActivityCard key={activity.id} activity={activity} />
+              ))
+            ) : (
+              <div className="empty-activities">
+                <Calendar size={48} />
+                <h3>No activities yet</h3>
+                <p>Join or create your first sports activity!</p>
+                <button className="create-activity-btn">
+                  <Plus size={20} />
+                  Create Activity
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Quick Actions */}
         <div className="quick-actions">
-          <h3 className="section-title">Quick Actions</h3>
+          <h2>Quick Actions</h2>
           <div className="actions-grid">
-            <a href="/activities/create" className="action-card">
-              <Plus size={24} />
-              <span>Create Activity</span>
-            </a>
-            <a href="/buddies" className="action-card">
-              <Users size={24} />
-              <span>Find Buddies</span>
-            </a>
-            <a href="/activities" className="action-card">
-              <Activity size={24} />
-              <span>Browse Activities</span>
-            </a>
-            <a href="/profile" className="action-card">
-              <Star size={24} />
-              <span>Update Profile</span>
-            </a>
+            <button className="action-btn">
+              <Plus size={20} />
+              Create Activity
+            </button>
+            <button className="action-btn">
+              <Users size={20} />
+              Find Buddies
+            </button>
+            <button className="action-btn">
+              <MessageCircle size={20} />
+              View Messages
+            </button>
+            <button className="action-btn">
+              <Trophy size={20} />
+              View Achievements
+            </button>
           </div>
         </div>
+
+        {/* Participants Modal */}
+        <ParticipantsModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          participants={selectedParticipants}
+        />
       </div>
     </div>
   );
