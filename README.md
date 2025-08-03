@@ -74,6 +74,33 @@ npm run dev
 
 The application will be available at `http://localhost:5173`
 
+## Deployment
+
+### Netlify Deployment
+
+1. **Push your code to GitHub**
+2. **Connect to Netlify**:
+   - Go to [Netlify](https://netlify.com)
+   - Click "New site from Git"
+   - Connect your GitHub repository
+   - Set build command: `npm run build`
+   - Set publish directory: `dist`
+
+3. **Set Environment Variables**:
+   - Go to Site settings > Environment variables
+   - Add all Firebase environment variables:
+     - `VITE_FIREBASE_API_KEY`
+     - `VITE_FIREBASE_AUTH_DOMAIN`
+     - `VITE_FIREBASE_PROJECT_ID`
+     - `VITE_FIREBASE_STORAGE_BUCKET`
+     - `VITE_FIREBASE_MESSAGING_SENDER_ID`
+     - `VITE_FIREBASE_APP_ID`
+     - `VITE_FIREBASE_MEASUREMENT_ID`
+
+4. **Deploy**: Netlify will automatically build and deploy your site
+
+**Note**: Never commit your actual Firebase configuration values to version control. Always use environment variables for sensitive data.
+
 ## Features Status
 
 ### ✅ Working Features

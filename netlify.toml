@@ -2,14 +2,15 @@
   command = "npm run build"
   publish = "dist"
 
-[build.environment]
-  VITE_FIREBASE_API_KEY = "AIzaSyAUn9v5Fv_FGqXcjJ2KhKyH4hKdcc1lI00"
-  VITE_FIREBASE_AUTH_DOMAIN = "sportsbuddy-9597e.firebaseapp.com"
-  VITE_FIREBASE_PROJECT_ID = "sportsbuddy-9597e"
-  VITE_FIREBASE_STORAGE_BUCKET = "sportsbuddy-9597e.firebasestorage.app"
-  VITE_FIREBASE_MESSAGING_SENDER_ID = "1077695106076"
-  VITE_FIREBASE_APP_ID = "1:1077695106076:web:a328ea18b2257f9af7a3d9"
-  VITE_FIREBASE_MEASUREMENT_ID = "G-PNSLTE3274"
+# Firebase environment variables should be set in Netlify dashboard
+# Go to Site settings > Environment variables and add:
+# VITE_FIREBASE_API_KEY
+# VITE_FIREBASE_AUTH_DOMAIN
+# VITE_FIREBASE_PROJECT_ID
+# VITE_FIREBASE_STORAGE_BUCKET
+# VITE_FIREBASE_MESSAGING_SENDER_ID
+# VITE_FIREBASE_APP_ID
+# VITE_FIREBASE_MEASUREMENT_ID
 
 [[redirects]]
   from = "/*"
