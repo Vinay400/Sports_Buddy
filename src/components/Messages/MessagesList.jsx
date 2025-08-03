@@ -6,8 +6,6 @@ import {
   Send,
   ArrowLeft,
   MoreVertical,
-  Phone,
-  Video,
   UserPlus
 } from 'lucide-react';
 import { 
@@ -115,28 +113,78 @@ const MessagesList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [sendingMessage, setSendingMessage] = useState(false);
+  const [creatingConversation, setCreatingConversation] = useState(false);
   const [error, setError] = useState(null);
   const [showParticipantsModal, setShowParticipantsModal] = useState(false);
   const [participantEmail, setParticipantEmail] = useState('');
   const [buddies, setBuddies] = useState([]);
+  const [hasError, setHasError] = useState(false);
+
+  // Error boundary for component
+  if (hasError) {
+    return (
+      <div className="messages-page">
+        <div className="error-state">
+          <h3>Something went wrong</h3>
+          <p>There was an error loading the messages. Please refresh the page.</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="retry-btn"
+          >
+            Refresh Page
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   useEffect(() => {
     if (currentUser) {
-      const unsubscribe = fetchConversations();
-      const buddiesUnsubscribe = fetchBuddies();
-      return () => {
-        unsubscribe && unsubscribe();
-        buddiesUnsubscribe && buddiesUnsubscribe();
-      };
+      try {
+        const unsubscribe = fetchConversations();
+        const buddiesUnsubscribe = fetchBuddies();
+        return () => {
+          if (unsubscribe && typeof unsubscribe === 'function') {
+            unsubscribe();
+          }
+          if (buddiesUnsubscribe && typeof buddiesUnsubscribe === 'function') {
+            buddiesUnsubscribe();
+          }
+        };
+      } catch (error) {
+        console.error('Error setting up listeners:', error);
+        setHasError(true);
+        return () => {};
+      }
     }
   }, [currentUser]);
+
+  // Debug Firebase connection
+  useEffect(() => {
+    console.log('=== Firebase Debug Info ===');
+    console.log('isFirebaseConfigured:', isFirebaseConfigured);
+    console.log('currentUser:', currentUser);
+    console.log('userProfile:', userProfile);
+    console.log('buddies count:', userProfile?.buddies?.length || 0);
+    console.log('conversations count:', conversations.length);
+    console.log('==========================');
+  }, [isFirebaseConfigured, currentUser, userProfile, conversations.length]);
 
   useEffect(() => {
     let unsubscribe;
     if (selectedConversation) {
-      unsubscribe = loadMessages(selectedConversation.id);
+      try {
+        unsubscribe = loadMessages(selectedConversation.id);
+      } catch (error) {
+        console.error('Error loading messages for conversation:', error);
+        unsubscribe = () => {};
+      }
     }
-    return () => unsubscribe && unsubscribe();
+    return () => {
+      if (unsubscribe && typeof unsubscribe === 'function') {
+        unsubscribe();
+      }
+    };
   }, [selectedConversation]);
 
   const fetchBuddies = () => {
@@ -159,16 +207,20 @@ const MessagesList = () => {
           );
 
         setBuddies(buddiesData);
+      }, (error) => {
+        console.error('Error fetching buddies:', error);
+        setBuddies([]);
       });
 
       return unsubscribe;
     } catch (error) {
-      console.error('Error fetching buddies:', error);
+      console.error('Error setting up buddies listener:', error);
+      setBuddies([]);
       return () => {}; // Return empty function for cleanup
     }
   };
 
-  const fetchConversations = async () => {
+  const fetchConversations = () => {
     try {
       setLoading(true);
       setError(null);
@@ -300,6 +352,12 @@ const MessagesList = () => {
 
   const startNewConversation = async (buddyId) => {
     try {
+      setCreatingConversation(true);
+      console.log('Starting conversation with buddy:', buddyId);
+      console.log('Current user:', currentUser?.uid);
+      console.log('User profile buddies:', userProfile?.buddies);
+      console.log('Firebase configured:', isFirebaseConfigured);
+
       if (!isFirebaseConfigured) {
         alert('Please configure Firebase to use this feature. Check SETUP.md for instructions.');
         return;
@@ -312,6 +370,8 @@ const MessagesList = () => {
 
       // Check if users are buddies
       const isBuddy = userProfile?.buddies?.includes(buddyId);
+      console.log('Is buddy check:', isBuddy);
+      
       if (!isBuddy) {
         alert('You can only message users who are your buddies. Send them a buddy request first!');
         return;
@@ -319,14 +379,18 @@ const MessagesList = () => {
 
       // Create a unique conversation ID
       const conversationId = [currentUser.uid, buddyId].sort().join('_');
+      console.log('Conversation ID:', conversationId);
       
       // Check if conversation already exists
       const existingConversation = conversations.find(conv => conv.id === conversationId);
 
       if (existingConversation) {
+        console.log('Existing conversation found:', existingConversation);
         setSelectedConversation(existingConversation);
         return;
       }
+
+      console.log('Creating new conversation...');
 
       // Create new conversation document
       const newConversation = {
@@ -337,12 +401,25 @@ const MessagesList = () => {
       };
 
       await setDoc(doc(db, 'conversations', conversationId), newConversation);
+      console.log('Conversation created successfully');
       
       // Refresh conversations to include the new one
       fetchConversations();
     } catch (error) {
       console.error('Error starting conversation:', error);
-      alert('Failed to start conversation. Please try again.');
+      
+      // More specific error messages
+      if (error.code === 'permission-denied') {
+        alert('Permission denied. Please check your Firebase security rules.');
+      } else if (error.code === 'unavailable') {
+        alert('Firebase is unavailable. Please check your internet connection.');
+      } else if (error.message?.includes('quota')) {
+        alert('Firebase quota exceeded. Please try again later.');
+      } else {
+        alert(`Failed to start conversation: ${error.message || 'Unknown error'}`);
+      }
+    } finally {
+      setCreatingConversation(false);
     }
   };
 
@@ -422,8 +499,8 @@ const MessagesList = () => {
 
   const BuddyItem = ({ buddy }) => (
     <div 
-      className="conversation-item buddy-item"
-      onClick={() => startNewConversation(buddy.id)}
+      className={`conversation-item buddy-item ${creatingConversation ? 'creating' : ''}`}
+      onClick={() => !creatingConversation && startNewConversation(buddy.id)}
     >
       <div className="conversation-avatar">
         {buddy.profileImage ? (
@@ -443,11 +520,17 @@ const MessagesList = () => {
           <h4 className="conversation-name">
             {buddy.firstName} {buddy.lastName}
           </h4>
-          <UserPlus size={16} className="buddy-icon" />
+          {creatingConversation ? (
+            <div className="loading-indicator">
+              <div className="loading-dot"></div>
+            </div>
+          ) : (
+            <UserPlus size={16} className="buddy-icon" />
+          )}
         </div>
 
         <p className="conversation-preview">
-          Click to start a conversation
+          {creatingConversation ? 'Creating conversation...' : 'Click to start a conversation'}
         </p>
       </div>
     </div>
@@ -501,6 +584,20 @@ const MessagesList = () => {
             </div>
           )}
 
+          {isFirebaseConfigured && (
+            <div className="firebase-status">
+              <div className="status-indicator connected">
+                <div className="status-dot"></div>
+                <span>Firebase Connected</span>
+              </div>
+              <div className="debug-info">
+                <small>User: {currentUser?.email || 'Not logged in'}</small>
+                <small>Buddies: {userProfile?.buddies?.length || 0}</small>
+                <small>Conversations: {conversations.length}</small>
+              </div>
+            </div>
+          )}
+
           {error && (
             <div className="error-state">
               <p>{error}</p>
@@ -532,18 +629,35 @@ const MessagesList = () => {
               <div className="empty-conversations">
                 <MessageCircle size={48} />
                 <h3>No conversations yet</h3>
-                <p>Start connecting with sports buddies to begin messaging!</p>
+                {userProfile?.buddies?.length === 0 ? (
+                  <div>
+                    <p>You don't have any buddies yet.</p>
+                    <p>Go to the Buddies section to find and connect with sports enthusiasts!</p>
+                    <button 
+                      className="action-btn"
+                      onClick={() => window.location.href = '/buddies'}
+                      style={{
+                        marginTop: '12px',
+                        background: '#2a69ff',
+                        color: 'white',
+                        border: 'none',
+                        padding: '8px 16px',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontWeight: '600'
+                      }}
+                    >
+                      Find Buddies
+                    </button>
+                  </div>
+                ) : (
+                  <p>Start connecting with sports buddies to begin messaging!</p>
+                )}
               </div>
             )}
           </div>
 
-          {/* Example button to open participant modal (replace with your logic) */}
-          <button
-            style={{ marginTop: 20, padding: '8px 12px' }}
-            onClick={() => openModalWithEmail('vinayguleria617@gmail.com')}
-          >
-            Show Participant Modal (Example)
-          </button>
+          {/* Remove the example button - not needed for chat functionality */}
         </div>
 
         {/* Chat Area */}
@@ -582,12 +696,6 @@ const MessagesList = () => {
                 </div>
 
                 <div className="chat-actions">
-                  <button className="action-btn">
-                    <Phone size={20} />
-                  </button>
-                  <button className="action-btn">
-                    <Video size={20} />
-                  </button>
                   <button className="action-btn">
                     <MoreVertical size={20} />
                   </button>
