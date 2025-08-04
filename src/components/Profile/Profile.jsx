@@ -12,8 +12,8 @@ import {
   X
 } from 'lucide-react';
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '../../config/firebase';
+import { db } from '../../config/firebase';
+import { uploadImageToCloudinary } from '../../config/cloudinary';
 import './Profile.css';
 
 const Profile = () => {
@@ -119,13 +119,25 @@ const Profile = () => {
     if (!imageFile) return profileData.profileImage;
 
     try {
-      const imageRef = ref(storage, `profiles/${currentUser.uid}/profile-image`);
-      await uploadBytes(imageRef, imageFile);
-      const downloadURL = await getDownloadURL(imageRef);
-      return downloadURL;
+      // Upload image to Cloudinary
+      const imageUrl = await uploadImageToCloudinary(imageFile);
+      return imageUrl;
     } catch (error) {
-      console.error('Error uploading image:', error);
-      return profileData.profileImage;
+      console.error('Error uploading image to Cloudinary:', error);
+      
+      // Fallback to base64 if Cloudinary fails
+      try {
+        const reader = new FileReader();
+        return new Promise((resolve) => {
+          reader.onloadend = () => {
+            resolve(reader.result); // This is the base64 data URL
+          };
+          reader.readAsDataURL(imageFile);
+        });
+      } catch (fallbackError) {
+        console.error('Error with fallback image processing:', fallbackError);
+        return profileData.profileImage;
+      }
     }
   };
 

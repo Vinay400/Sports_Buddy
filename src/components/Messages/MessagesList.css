@@ -40,6 +40,7 @@
   padding: 8px 16px;
   border-bottom: 1px solid #ddd;
   background: #f9f9f9;
+  max-height: fit-content;
 }
 
 .search-bar input {
@@ -700,6 +701,9 @@
   padding: 8px 12px;
   margin-bottom: 16px;
   transition: all 0.3s ease;
+}
+.search-bar svg {
+  left: 0  !important;
 }
 
 .search-bar:focus-within {

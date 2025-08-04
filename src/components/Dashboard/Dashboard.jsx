@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 import {
   Calendar,
   Users,
@@ -16,6 +17,7 @@ import './Dashboard.css';
 
 const Dashboard = () => {
   const { currentUser, userProfile } = useAuth();
+  const navigate = useNavigate();
 
   const [stats, setStats] = useState({
     activities: 0,
@@ -109,6 +111,27 @@ const Dashboard = () => {
   const handleParticipantsClick = (participantIds) => {
     fetchParticipantsData(participantIds);
     setIsModalOpen(true);
+  };
+
+  // Navigation handlers for quick actions
+  const handleCreateActivity = () => {
+    navigate('/activities');
+  };
+
+  const handleFindBuddies = () => {
+    navigate('/buddies');
+  };
+
+  const handleViewMessages = () => {
+    navigate('/messages');
+  };
+
+  const handleViewAchievements = () => {
+    navigate('/profile');
+  };
+
+  const handleViewAllActivities = () => {
+    navigate('/activities');
   };
 
   const StatCard = ({ icon: Icon, title, value, color }) => (
@@ -206,7 +229,7 @@ const Dashboard = () => {
         <div className="recent-activities">
           <div className="section-header">
             <h2>Recent Activities</h2>
-            <button className="view-all-btn">View All</button>
+            <button className="view-all-btn" onClick={handleViewAllActivities}>View All</button>
           </div>
           <div className="activities-grid">
             {recentActivities.length > 0 ? (
@@ -218,7 +241,7 @@ const Dashboard = () => {
                 <Calendar size={48} />
                 <h3>No activities yet</h3>
                 <p>Join or create your first sports activity!</p>
-                <button className="create-activity-btn">
+                <button className="create-activity-btn" onClick={handleCreateActivity}>
                   <Plus size={20} />
                   Create Activity
                 </button>
@@ -231,19 +254,19 @@ const Dashboard = () => {
         <div className="quick-actions">
           <h2>Quick Actions</h2>
           <div className="actions-grid">
-            <button className="action-btn">
+            <button className="action-btn" onClick={handleCreateActivity}>
               <Plus size={20} />
               Create Activity
             </button>
-            <button className="action-btn">
+            <button className="action-btn" onClick={handleFindBuddies}>
               <Users size={20} />
               Find Buddies
             </button>
-            <button className="action-btn">
+            <button className="action-btn" onClick={handleViewMessages}>
               <MessageCircle size={20} />
               View Messages
             </button>
-            <button className="action-btn">
+            <button className="action-btn" onClick={handleViewAchievements}>
               <Trophy size={20} />
               View Achievements
             </button>
