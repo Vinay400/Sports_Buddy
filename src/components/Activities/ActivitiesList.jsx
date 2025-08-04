@@ -10,6 +10,7 @@ import {
   Plus,
   Star
 } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import { 
   collection, 
   query, 
@@ -45,6 +46,15 @@ const ActivitiesList = () => {
 
   const skillLevels = ['Beginner', 'Intermediate', 'Advanced', 'Professional'];
 
+  const location = useLocation(); // ✅ ADD THIS
+
+  // ✅ Sync search term with query parameter
+  useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    const sportQuery = queryParams.get('search') || '';
+    setSearchTerm(sportQuery);
+  }, [location.search]);
+  
   useEffect(() => {
     fetchActivities();
   }, []);
@@ -79,9 +89,7 @@ const ActivitiesList = () => {
     // Search filter
     if (searchTerm) {
       filtered = filtered.filter(activity =>
-        activity.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        activity.sport.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        activity.location.toLowerCase().includes(searchTerm.toLowerCase())
+        activity.sport.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -104,7 +112,7 @@ const ActivitiesList = () => {
 
     setFilteredActivities(filtered);
   };
-
+  
   const joinActivity = async (activityId) => {
     try {
       const activityRef = doc(db, 'activities', activityId);

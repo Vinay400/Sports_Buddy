@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { User, Bell, Search, Menu, X } from 'lucide-react';
-import { collection, query, where, onSnapshot, updateDoc, doc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import './Header.css';
 
@@ -9,9 +9,14 @@ const Header = () => {
   const { currentUser, userProfile, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [notifications, setNotifications] = useState([]);
-  const [showNotifications, setShowNotifications] = useState(false);
-
+  const [notificationCount, setNotificationCount] = useState(0);
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+      navigate(`/activities?search=${encodeURIComponent(searchTerm.trim())}`);
+      setSearchTerm('');
+    }
+  };
   const handleLogout = async () => {
     try {
       await logout();
@@ -25,34 +30,16 @@ const Header = () => {
 
     const notificationsQuery = query(
       collection(db, 'notifications'),
-      where('userId', '==', currentUser.uid)
+      where('userId', '==', currentUser.uid),
+      where('read', '==', false) // Only unread notifications
     );
 
     const unsubscribe = onSnapshot(notificationsQuery, (snapshot) => {
-      const notifData = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setNotifications(notifData);
+      setNotificationCount(snapshot.docs.length);
     });
 
     return () => unsubscribe();
   }, [currentUser]);
-
-  const unreadCount = notifications.filter((n) => !n.read).length;
-
-  const toggleNotifications = async () => {
-    setShowNotifications(!showNotifications);
-
-    // Mark notifications as read when opening
-    if (!showNotifications) {
-      notifications.forEach(async (notif) => {
-        if (!notif.read) {
-          await updateDoc(doc(db, 'notifications', notif.id), { read: true });
-        }
-      });
-    }
-  };
 
   return (
     <header className="header">
@@ -84,37 +71,12 @@ const Header = () => {
         {/* User Actions */}
         <div className="header-actions">
           {/* Notifications */}
-          <div className="notification-wrapper">
-            <button className="action-btn" onClick={toggleNotifications}>
-              <Bell size={20} />
-              {unreadCount > 0 && (
-                <span className="notification-badge">{unreadCount}</span>
-              )}
-            </button>
-
-            {showNotifications && (
-              <div className="notification-modal">
-                <h4>Notifications</h4>
-                <div className="notification-list">
-                  {notifications.length > 0 ? (
-                    notifications.map((notif) => (
-                      <div
-                        key={notif.id}
-                        className={`notification-item ${notif.read ? 'read' : ''}`}
-                      >
-                        <p>{notif.message}</p>
-                        <span className="notif-time">
-                          {new Date(notif.createdAt?.seconds * 1000).toLocaleString()}
-                        </span>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="no-notifications">No new notifications</p>
-                  )}
-                </div>
-              </div>
+          <button className="action-btn" onClick={() => (window.location.href = '/notifications')}>
+            <Bell size={20} />
+            {notificationCount > 0 && (
+              <span className="notification-badge">{notificationCount}</span>
             )}
-          </div>
+          </button>
 
           {/* Profile Dropdown */}
           <div className="profile-dropdown">
