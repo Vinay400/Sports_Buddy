@@ -153,7 +153,3 @@ src/
 3. Make your changes
 4. Test thoroughly
 5. Submit a pull request
-
-## License
-
-MIT License 
