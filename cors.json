@@ -4,7 +4,7 @@
       "http://localhost:5173",
       "http://localhost:3000",
       "http://localhost:8080",
-      "https://your-production-domain.com"
+      "https://sportsbuddy4.netlify.app/"
     ],
     "method": ["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"],
     "maxAgeSeconds": 3600,
