@@ -1,13 +1,13 @@
-import { createContext, useContext, useEffect, useState } from 'react';
-import { 
-  signInWithEmailAndPassword, 
+import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import {
+  signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
   updateProfile,
   sendPasswordResetEmail,
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithPopup,
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
@@ -30,13 +30,11 @@ export const AuthProvider = ({ children }) => {
   const signup = async (email, password, firstName, lastName) => {
     try {
       const result = await createUserWithEmailAndPassword(auth, email, password);
-      
-      // Update profile with display name
+
       await updateProfile(result.user, {
-        displayName: `${firstName} ${lastName}`
+        displayName: `${firstName} ${lastName}`,
       });
 
-      // Create user profile in Firestore
       await setDoc(doc(db, 'users', result.user.uid), {
         firstName,
         lastName,
@@ -45,7 +43,7 @@ export const AuthProvider = ({ children }) => {
         profileComplete: false,
         activitiesJoined: 0,
         activitiesCreated: 0,
-        rating: 4.5
+        rating: 4.5,
       });
 
       return { user: result.user };
@@ -63,9 +61,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    return signOut(auth);
-  };
+  const logout = () => signOut(auth);
 
   const resetPassword = async (email) => {
     try {
@@ -80,8 +76,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const googleProvider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, googleProvider);
-      
-      // Check if user profile exists, if not create one
+
       const userDoc = await getDoc(doc(db, 'users', result.user.uid));
       if (!userDoc.exists()) {
         const names = result.user.displayName?.split(' ') || ['', ''];
@@ -93,31 +88,40 @@ export const AuthProvider = ({ children }) => {
           profileComplete: false,
           activitiesJoined: 0,
           activitiesCreated: 0,
-          rating: 4.5
+          rating: 4.5,
         });
       }
-      
+
       return { user: result.user };
     } catch (error) {
       return { error: error.code };
     }
   };
 
-  const fetchUserProfile = async (uid) => {
-  try {
-    const docRef = doc(db, 'users', uid);
-    const docSnap = await getDoc(docRef);
-    
-    if (docSnap.exists()) {
-      const profile = docSnap.data();
-      setUserProfile(profile);
-      return profile;
+  // ✅ FIX: Wrapped fetchUserProfile in useCallback so its reference is stable.
+  // Previously, including it in the useEffect dependency array below (as ESLint
+  // would require) would cause an infinite loop because a new function reference
+  // was created on every render. With useCallback it's created once and reused.
+  const fetchUserProfile = useCallback(async (uid) => {
+    try {
+      const docRef = doc(db, 'users', uid);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        const profile = docSnap.data();
+        setUserProfile(profile);
+        return profile;
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
     }
-  } catch (error) {
-    console.error('Error fetching user profile:', error);
-  }
-};
+  }, []); // No external dependencies — db and doc are module-level imports
+
   useEffect(() => {
+    // ✅ FIX (continued): fetchUserProfile is now safe to include here as a
+    // dependency because useCallback gives it a stable reference. Previously
+    // it was omitted from the dependency array (an ESLint exhaustive-deps
+    // violation) to avoid the infinite loop — now both issues are resolved.
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
       if (user) {
@@ -129,7 +133,7 @@ export const AuthProvider = ({ children }) => {
     });
 
     return unsubscribe;
-  }, []);
+  }, [fetchUserProfile]);
 
   const value = {
     currentUser,
@@ -139,7 +143,7 @@ export const AuthProvider = ({ children }) => {
     logout,
     resetPassword,
     signInWithProvider,
-    fetchUserProfile
+    fetchUserProfile,
   };
 
   return (
