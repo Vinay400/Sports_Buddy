@@ -32,12 +32,7 @@ const SPORTS = [
 
 const SKILL_LEVELS = ['Beginner', 'Intermediate', 'Advanced', 'Professional'];
 
-// ✅ FIX 1: Moved outside parent component so it's not re-created on every render.
-// Previously defined inside ActivitiesList, causing a new component reference each render
-// which breaks React's reconciliation and resets all internal state.
 const ActivityCard = ({ activity, currentUserId, onJoin }) => {
-  // ✅ FIX 2: Added null guard — if currentUserId is undefined (e.g. logged-out mid-session),
-  // these checks won't crash.
   const isJoined = currentUserId
     ? activity.participants?.includes(currentUserId)
     : false;
@@ -119,8 +114,6 @@ const ActivityCard = ({ activity, currentUserId, onJoin }) => {
   );
 };
 
-// ✅ FIX 1 (continued): CreateActivityModal also moved outside to avoid
-// remounting on every parent render, which was resetting its local form state.
 const CreateActivityModal = ({ onClose, onCreated, currentUserId }) => {
   const [formData, setFormData] = useState({
     title: '',
@@ -337,8 +330,6 @@ const ActivitiesList = () => {
     setSearchTerm(sportQuery);
   }, [location.search]);
 
-  // ✅ FIX 3: Wrapped fetchActivities in useCallback so it has a stable reference
-  // and can be safely included in dependency arrays without causing infinite loops.
   const fetchActivities = useCallback(async () => {
     try {
       setLoading(true);
@@ -392,7 +383,6 @@ const ActivitiesList = () => {
     setFilteredActivities(filtered);
   }, [activities, searchTerm, filters]);
 
-  // ✅ FIX 3 (continued): joinActivity also wrapped in useCallback.
   const joinActivity = useCallback(
     async (activityId) => {
       if (!currentUser) return;
@@ -491,9 +481,6 @@ const ActivitiesList = () => {
               <ActivityCard
                 key={activity.id}
                 activity={activity}
-                // ✅ FIX 2: Pass currentUserId as a prop instead of closing over
-                // currentUser inside the component definition, which previously
-                // caused stale closure bugs when the user state changed.
                 currentUserId={currentUser?.uid}
                 onJoin={joinActivity}
               />
@@ -515,8 +502,6 @@ const ActivitiesList = () => {
         )}
       </div>
 
-      {/* ✅ FIX 1 (continued): Modal now receives callbacks as props instead of
-          closing over parent state directly, making it a proper standalone component. */}
       {showCreateModal && (
         <CreateActivityModal
           onClose={() => setShowCreateModal(false)}

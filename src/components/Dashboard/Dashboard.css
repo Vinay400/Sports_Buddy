@@ -47,18 +47,6 @@
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.status-card.checking {
-  border-left: 4px solid #f59e0b;
-}
-
-.status-card.connected {
-  border-left: 4px solid #10b981;
-}
-
-.status-card.failed {
-  border-left: 4px solid #ef4444;
-}
-
 .status-card.not-configured {
   border-left: 4px solid #f59e0b;
 }
@@ -68,20 +56,11 @@
   font-weight: 600;
 }
 
-.status-card.checking p {
-  color: #f59e0b;
-}
-
-.status-card.connected p {
-  color: #10b981;
-}
-
-.status-card.failed p {
-  color: #ef4444;
-}
-
 .status-card.not-configured p {
-  color: #f59e0b;
+  color: #92400e;
+  font-weight: 500;
+  font-size: 0.95rem;
+  line-height: 1.5;
 }
 
 /* Stats Grid */
