@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { User, Bell, Search, Menu, X } from 'lucide-react';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
@@ -6,14 +7,18 @@ import { db } from '../../config/firebase';
 import './Header.css';
 
 const Header = () => {
+  const navigate = useNavigate();
   const { currentUser, userProfile, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
+
   const handleSearch = (e) => {
     e.preventDefault();
-    if (searchTerm.trim()) {
-      navigate(`/activities?search=${encodeURIComponent(searchTerm.trim())}`);
+    const q = searchTerm.trim();
+    if (q) {
+      navigate(`/activities?search=${encodeURIComponent(q)}`);
       setSearchTerm('');
     }
   };
@@ -51,14 +56,17 @@ const Header = () => {
         </div>
 
         {/* Search Bar */}
-        <div className="header-search">
+        <form className="header-search" onSubmit={handleSearch}>
           <Search className="search-icon" />
           <input
             type="text"
             placeholder="Search sports, activities, or buddies..."
             className="search-input"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            aria-label="Search activities by sport"
           />
-        </div>
+        </form>
 
         {/* Navigation */}
         <nav className={`header-nav ${isMenuOpen ? 'nav-open' : ''}`}>
@@ -71,7 +79,11 @@ const Header = () => {
         {/* User Actions */}
         <div className="header-actions">
           {/* Notifications */}
-          <button className="action-btn" onClick={() => (window.location.href = '/notifications')}>
+          <button
+            type="button"
+            className="action-btn"
+            onClick={() => navigate('/notifications')}
+          >
             <Bell size={20} />
             {notificationCount > 0 && (
               <span className="notification-badge">{notificationCount}</span>

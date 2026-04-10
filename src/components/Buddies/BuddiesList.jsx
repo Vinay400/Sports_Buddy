@@ -29,9 +29,6 @@ const SPORTS = [
 
 const SKILL_LEVELS = ['Beginner', 'Intermediate', 'Advanced', 'Professional'];
 
-// ✅ FIX 1: Moved BuddyCard outside BuddiesList. Previously it was re-created as
-// a new component reference on every render of the parent, causing React to unmount
-// and remount every card on each state change (very expensive + resets focus/scroll).
 const BuddyCard = ({ buddy, isConnected, requestSent, onConnect, onMessage }) => (
   <div className="buddy-card">
     <div className="buddy-avatar">
@@ -131,9 +128,6 @@ const BuddyCard = ({ buddy, isConnected, requestSent, onConnect, onMessage }) =>
 
 const BuddiesList = () => {
   const { currentUser, userProfile } = useAuth();
-  // ✅ FIX 2: Replaced window.location.href with React Router's useNavigate.
-  // window.location.href causes a full page reload, losing all React state
-  // and re-fetching the entire app bundle unnecessarily.
   const navigate = useNavigate();
 
   const [buddies, setBuddies] = useState([]);
@@ -149,21 +143,11 @@ const BuddiesList = () => {
   const [pendingRequests, setPendingRequests] = useState(new Set());
   const [incomingRequests, setIncomingRequests] = useState([]);
 
-  // ✅ FIX 3: Separated buddy-fetching setup from the retry handler.
-  // Previously, fetchBuddies returned an unsubscribe function, which worked fine
-  // inside useEffect but made the retry button call meaningless (it would just
-  // call the function and discard the returned unsubscriber, leaking a listener).
-  // Now setupBuddiesListener owns the subscription and retryFetch is a plain async fn.
   const retryFetch = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      // Re-trigger by toggling state; actual subscription is managed via effect.
-      // This simple approach avoids duplicating listener logic.
     } finally {
-      // The useEffect below will handle re-subscribing when needed.
-      // For a simple retry UX, just reset the error and let the existing
-      // snapshot listeners resume (they auto-retry on reconnect).
       setError(null);
       setLoading(false);
     }
@@ -305,7 +289,6 @@ const BuddiesList = () => {
     [currentUser]
   );
 
-  // ✅ FIX 2 (continued): navigate() instead of window.location.href
   const startConversation = useCallback(
     (buddyId) => {
       if (!isFirebaseConfigured) {
@@ -350,8 +333,8 @@ const BuddiesList = () => {
         {!isFirebaseConfigured && (
           <div className="demo-notice">
             <p>
-              ⚠️ Running in demo mode. Configure Firebase to see real buddies
-              and connect with users.
+              Discovering and connecting with buddies requires Firebase credentials in
+              your environment. Follow the setup guide to use your own project.
             </p>
             <a href="/SETUP.md" className="setup-link">
               View Setup Guide
@@ -413,8 +396,6 @@ const BuddiesList = () => {
         {error && (
           <div className="error-state">
             <p>{error}</p>
-            {/* ✅ FIX 3: Retry now calls a plain async function, not the listener
-                setup function that returns an unsubscriber. */}
             <button onClick={retryFetch} className="retry-btn">
               Try Again
             </button>
@@ -429,8 +410,6 @@ const BuddiesList = () => {
         ) : (
           <div className="buddies-grid">
             {filteredBuddies.map((buddy) => (
-              // ✅ FIX 1 (continued): Pass derived state as props instead of
-              // computing them inside the now-external BuddyCard component.
               <BuddyCard
                 key={buddy.id}
                 buddy={buddy}

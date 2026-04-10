@@ -26,30 +26,12 @@ const Dashboard = () => {
     achievements: 0
   });
   const [recentActivities, setRecentActivities] = useState([]);
-  const [firebaseStatus, setFirebaseStatus] = useState('checking');
   const [selectedParticipants, setSelectedParticipants] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
-    testFirebaseConnection();
   }, [currentUser]);
-
-  const testFirebaseConnection = async () => {
-    try {
-      if (!isFirebaseConfigured) {
-        setFirebaseStatus('not-configured');
-        return;
-      }
-
-      const testQuery = collection(db, 'users');
-      const snapshot = await getDocs(testQuery);
-      setFirebaseStatus('connected');
-    } catch (error) {
-      console.error('Firebase connection failed:', error);
-      setFirebaseStatus('failed');
-    }
-  };
 
   const fetchDashboardData = async () => {
     try {
@@ -81,7 +63,7 @@ const Dashboard = () => {
 
       setRecentActivities(recentActivitiesData);
     } catch (error) {
-      console.error('🔥 Unexpected error:', error);
+      console.error('Error loading dashboard:', error);
     }
   };
 
@@ -189,30 +171,12 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Firebase Status */}
-        {firebaseStatus === 'checking' && (
-          <div className="status-card checking">
-            <p>Checking Firebase connection...</p>
-          </div>
-        )}
-        {firebaseStatus === 'connected' && (
-          <div className="status-card connected">
-            <p>✅ Firebase connected successfully!</p>
-          </div>
-        )}
-        {firebaseStatus === 'not-configured' && (
+        {!isFirebaseConfigured && (
           <div className="status-card not-configured">
-            <p>⚠️ Firebase not configured - Running in demo mode</p>
-            <p style={{ fontSize: '0.9rem', marginTop: '0.5rem', color: '#666' }}>
-              To enable full functionality, please set up your Firebase project and environment variables.
-            </p>
-          </div>
-        )}
-        {firebaseStatus === 'failed' && (
-          <div className="status-card failed">
-            <p>❌ Firebase connection failed</p>
-            <p style={{ fontSize: '0.9rem', marginTop: '0.5rem', color: '#666' }}>
-              Please check your environment variables and Firebase project configuration.
+            <p>
+              Configure Firebase environment variables for your own deployment (see
+              project setup documentation). The app may use bundled defaults for local
+              development.
             </p>
           </div>
         )}

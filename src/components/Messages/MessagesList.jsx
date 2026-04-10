@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { 
   Search, 
@@ -10,10 +11,9 @@ import {
 } from 'lucide-react';
 import { 
   collection, 
-  query, 
-  orderBy, 
-  getDocs, 
-  where, 
+  query,
+  orderBy,
+  where,
   addDoc,
   onSnapshot,
   doc,
@@ -25,86 +25,8 @@ import {
 import { db, isFirebaseConfigured } from '../../config/firebase';
 import './MessagesList.css';
 
-const ActivityParticipantsModal = ({ participantEmail, onClose, startNewConversation }) => {
-  const { currentUser } = useAuth();
-
-  const getUserByEmail = async (email) => {
-    if (!isFirebaseConfigured) {
-      alert('Please configure Firebase to use this feature. Check SETUP.md for instructions.');
-      return null;
-    }
-
-    try {
-      const usersQuery = query(collection(db, 'users'), where('email', '==', email));
-      const userSnapshot = await getDocs(usersQuery);
-
-      if (userSnapshot.empty) {
-        alert('User not found');
-        return null;
-      }
-      return userSnapshot.docs[0].id;
-    } catch (error) {
-      console.error('Error finding user by email:', error);
-      alert('Failed to find user. Please try again.');
-      return null;
-    }
-  };
-
-  const handleMessageClick = async () => {
-    if (!currentUser) return alert('You must be logged in');
-
-    const buddyId = await getUserByEmail(participantEmail);
-    if (!buddyId) return;
-
-    startNewConversation(buddyId);
-    onClose();
-  };
-
-  const handleAddBuddyClick = async () => {
-    if (!currentUser) return alert('You must be logged in');
-
-    const buddyId = await getUserByEmail(participantEmail);
-    if (!buddyId) return;
-
-    try {
-      await addDoc(collection(db, 'users', currentUser.uid, 'buddies'), {
-        buddyId,
-        addedAt: serverTimestamp(),
-      });
-      alert('Buddy added successfully!');
-      onClose();
-    } catch (error) {
-      console.error('Error adding buddy:', error);
-      alert('Failed to add buddy. Please try again.');
-    }
-  };
-
-  return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <button className="modal-close-btn" onClick={onClose}>&times;</button>
-
-        <h2>Activity Participants</h2>
-
-        <div className="participant-card">
-          <h3>User</h3>
-          <p>{participantEmail}</p>
-
-          <div className="participant-actions">
-            <button className="btn btn-message" onClick={handleMessageClick}>
-              Message
-            </button>
-            <button className="btn btn-add-buddy" onClick={handleAddBuddyClick}>
-              Add Buddy
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 const MessagesList = () => {
+  const navigate = useNavigate();
   const { currentUser, userProfile } = useAuth();
   const [conversations, setConversations] = useState([]);
   const [selectedConversation, setSelectedConversation] = useState(null);
@@ -115,8 +37,6 @@ const MessagesList = () => {
   const [sendingMessage, setSendingMessage] = useState(false);
   const [creatingConversation, setCreatingConversation] = useState(false);
   const [error, setError] = useState(null);
-  const [showParticipantsModal, setShowParticipantsModal] = useState(false);
-  const [participantEmail, setParticipantEmail] = useState('');
   const [buddies, setBuddies] = useState([]);
   const [hasError, setHasError] = useState(false);
 
@@ -158,17 +78,6 @@ const MessagesList = () => {
       }
     }
   }, [currentUser]);
-
-  // Debug Firebase connection
-  useEffect(() => {
-    console.log('=== Firebase Debug Info ===');
-    console.log('isFirebaseConfigured:', isFirebaseConfigured);
-    console.log('currentUser:', currentUser);
-    console.log('userProfile:', userProfile);
-    console.log('buddies count:', userProfile?.buddies?.length || 0);
-    console.log('conversations count:', conversations.length);
-    console.log('==========================');
-  }, [isFirebaseConfigured, currentUser, userProfile, conversations.length]);
 
   useEffect(() => {
     let unsubscribe;
@@ -226,7 +135,6 @@ const MessagesList = () => {
       setError(null);
 
       if (!isFirebaseConfigured) {
-        console.log('Firebase not configured - showing demo message');
         setConversations([]);
         setLoading(false);
         return () => {}; // Return empty function for cleanup
@@ -353,10 +261,6 @@ const MessagesList = () => {
   const startNewConversation = async (buddyId) => {
     try {
       setCreatingConversation(true);
-      console.log('Starting conversation with buddy:', buddyId);
-      console.log('Current user:', currentUser?.uid);
-      console.log('User profile buddies:', userProfile?.buddies);
-      console.log('Firebase configured:', isFirebaseConfigured);
 
       if (!isFirebaseConfigured) {
         alert('Please configure Firebase to use this feature. Check SETUP.md for instructions.');
@@ -368,29 +272,21 @@ const MessagesList = () => {
         return;
       }
 
-      // Check if users are buddies
       const isBuddy = userProfile?.buddies?.includes(buddyId);
-      console.log('Is buddy check:', isBuddy);
-      
+
       if (!isBuddy) {
         alert('You can only message users who are your buddies. Send them a buddy request first!');
         return;
       }
 
-      // Create a unique conversation ID
       const conversationId = [currentUser.uid, buddyId].sort().join('_');
-      console.log('Conversation ID:', conversationId);
-      
-      // Check if conversation already exists
+
       const existingConversation = conversations.find(conv => conv.id === conversationId);
 
       if (existingConversation) {
-        console.log('Existing conversation found:', existingConversation);
         setSelectedConversation(existingConversation);
         return;
       }
-
-      console.log('Creating new conversation...');
 
       // Create new conversation document
       const newConversation = {
@@ -401,9 +297,7 @@ const MessagesList = () => {
       };
 
       await setDoc(doc(db, 'conversations', conversationId), newConversation);
-      console.log('Conversation created successfully');
-      
-      // Refresh conversations to include the new one
+
       fetchConversations();
     } catch (error) {
       console.error('Error starting conversation:', error);
@@ -547,12 +441,6 @@ const MessagesList = () => {
     );
   }
 
-  // Example: open modal with a participant email (replace with actual participant data)
-  const openModalWithEmail = (email) => {
-    setParticipantEmail(email);
-    setShowParticipantsModal(true);
-  };
-
   return (
     <div className="messages-page">
       <div className="messages-container">
@@ -575,26 +463,12 @@ const MessagesList = () => {
           {!isFirebaseConfigured && (
             <div className="demo-notice">
               <p>
-                ⚠️ Running in demo mode. Configure Firebase to see real conversations and
-                send messages.
+                Messaging requires Firebase credentials in your environment. Use the setup
+                guide to connect your project for this coursework demonstration.
               </p>
               <a href="/SETUP.md" className="setup-link">
                 View Setup Guide
               </a>
-            </div>
-          )}
-
-          {isFirebaseConfigured && (
-            <div className="firebase-status">
-              <div className="status-indicator connected">
-                <div className="status-dot"></div>
-                <span>Firebase Connected</span>
-              </div>
-              <div className="debug-info">
-                <small>User: {currentUser?.email || 'Not logged in'}</small>
-                <small>Buddies: {userProfile?.buddies?.length || 0}</small>
-                <small>Conversations: {conversations.length}</small>
-              </div>
             </div>
           )}
 
@@ -633,19 +507,10 @@ const MessagesList = () => {
                   <div>
                     <p>You don't have any buddies yet.</p>
                     <p>Go to the Buddies section to find and connect with sports enthusiasts!</p>
-                    <button 
-                      className="action-btn"
-                      onClick={() => window.location.href = '/buddies'}
-                      style={{
-                        marginTop: '12px',
-                        background: '#2a69ff',
-                        color: 'white',
-                        border: 'none',
-                        padding: '8px 16px',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        fontWeight: '600'
-                      }}
+                    <button
+                      type="button"
+                      className="action-btn messages-find-buddies-btn"
+                      onClick={() => navigate('/buddies')}
                     >
                       Find Buddies
                     </button>
@@ -656,8 +521,6 @@ const MessagesList = () => {
               </div>
             )}
           </div>
-
-          {/* Remove the example button - not needed for chat functionality */}
         </div>
 
         {/* Chat Area */}
@@ -742,14 +605,6 @@ const MessagesList = () => {
           )}
         </div>
       </div>
-
-      {showParticipantsModal && (
-        <ActivityParticipantsModal
-          participantEmail={participantEmail}
-          onClose={() => setShowParticipantsModal(false)}
-          startNewConversation={startNewConversation}
-        />
-      )}
     </div>
   );
 };

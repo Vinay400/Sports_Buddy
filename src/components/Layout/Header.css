@@ -47,6 +47,9 @@
   flex: 1;
   position: relative;
   max-width: 400px;
+  display: flex;
+  align-items: center;
+  margin: 0;
 }
 
 .search-icon {

@@ -17,9 +17,6 @@ import {
 import { db, isFirebaseConfigured } from '../../config/firebase';
 import './BuddyRequests.css';
 
-// ✅ FIX 1: Moved RequestCard outside BuddyRequests. Defining it inside the parent
-// meant React treated it as a new component type on every render, causing it to
-// fully unmount and remount — losing any internal state and hurting performance.
 const RequestCard = ({ request, onAccept, onReject }) => (
   <div className="request-card">
     <div className="request-avatar">
@@ -108,11 +105,6 @@ const BuddyRequests = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // ✅ FIX 2: Snapshot subscription is now managed entirely inside a single
-  // useEffect with proper cleanup. Previously fetchIncomingRequests was called
-  // both inside useEffect and on the retry button — but it returned an unsubscriber,
-  // so the retry call was silently leaking a duplicate Firestore listener every time
-  // the user clicked "Try Again".
   useEffect(() => {
     if (!currentUser) return;
 
@@ -142,8 +134,6 @@ const BuddyRequests = () => {
               if (senderDoc.exists()) {
                 request.sender = { id: request.from, ...senderDoc.data() };
               }
-              // ✅ FIX 3: Pre-compute formatted time so RequestCard doesn't need
-              // to call formatTime on every render — keeps the component pure/simple.
               request.formattedTime = formatTime(request.createdAt);
               return request;
             })
@@ -166,14 +156,9 @@ const BuddyRequests = () => {
     return () => unsubscribe();
   }, [currentUser]);
 
-  // ✅ FIX 2 (continued): Retry simply resets the error flag. The onSnapshot
-  // listener above already auto-retries on reconnect; for persistent errors the
-  // user can reload. This avoids spawning a second duplicate listener.
   const handleRetry = useCallback(() => {
     setError(null);
     setLoading(true);
-    // Firestore's onSnapshot retries automatically on transient errors.
-    // Resetting state gives the user visual feedback that something happened.
     setTimeout(() => setLoading(false), 1500);
   }, []);
 
@@ -261,8 +246,8 @@ const BuddyRequests = () => {
         {!isFirebaseConfigured && (
           <div className="demo-notice">
             <p>
-              ⚠️ Running in demo mode. Configure Firebase to see real buddy
-              requests.
+              Buddy requests require Firebase credentials in your environment.
+              Use the setup guide to connect your own project for full functionality.
             </p>
             <a href="/SETUP.md" className="setup-link">
               View Setup Guide
@@ -273,8 +258,6 @@ const BuddyRequests = () => {
         {error && (
           <div className="error-state">
             <p>{error}</p>
-            {/* ✅ FIX 2 (continued): Retry button now calls a safe reset handler,
-                not the listener-setup function that leaked subscriptions. */}
             <button onClick={handleRetry} className="retry-btn">
               Try Again
             </button>
